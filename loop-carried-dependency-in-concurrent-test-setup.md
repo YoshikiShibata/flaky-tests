@@ -109,10 +109,3 @@ wg.Wait()
 
 - **ループキャリー依存性（Loop-Carried Dependency）**: コンパイラ最適化の分野で、ループの異なるイテレーション間にデータ依存がある状態。並列化の障壁となる。
 - **Happens-Before 関係**: 並行プログラミングにおいて、ある操作が別の操作より前に完了することが保証される関係。`wg.Wait()` は happens-before 関係を確立する。
-
-## 実例
-
-- **リポジトリ**: kauche-app
-- **テスト**: `TestListProductsBySalesRanking_OK_OriginProductIDs`
-- **混入**: c9276c5893 (#10580, 2025-08-18) — 逐次ループの並行化
-- **初回発生**: 2026-04-12 — 混入から約8ヶ月後
