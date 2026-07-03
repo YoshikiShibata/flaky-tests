@@ -59,6 +59,15 @@ read が `Aborted` を返す → コールバックが握りつぶして nil →
 
 いずれにせよ**エラーが表面化しない**ため、テストは通り続け、握りつぶしバグに気付けない。
 
+> **参考：本事例での具体バージョン**
+> - 使用していたエミュレータ: `cloud-spanner-emulator` **`1.5.47`**（この multiplexed session の
+>   commit サイレント受理バグを含む）。
+> - 修正されたバージョン: **`1.5.50`**（`cloud-spanner-emulator` issue #282
+>   "Write operations (Apply/Update) silently fail under concurrent load" として修正）。
+> - つまり `1.5.47 < 1.5.50` のため、当時のエミュレータは未修正で、握りつぶしバグを
+>   サイレントに隠していた。エミュレータを `1.5.50` 以降に更新すると、この種のバグを
+>   エミュレータ側でも fail loud で捕まえやすくなる。
+
 ### 厳密なエンジン（本番相当）が暴く
 
 同じシーケンスで、厳密なエンジンは commit を**非 retryable なエラーで拒否**する
