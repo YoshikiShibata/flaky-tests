@@ -27,6 +27,7 @@ E2E テスト・並列実行環境で発生した flaky test の事例と対策�
 - [業務時間境界をまたぐテストデータによるフレーキーテスト](./time-frame-boundary-crossing.md) — 相対時刻がドメイン固有の日付境界をまたぐ
 - [テストデータの有効期限が次の暦境界とちょうど一致するパターン](./data-lifetime-aligned-to-day-boundary.md) — 暦境界アンカーの StartTime と整数倍 duration の組み合わせで、テスト実行中の境界跨ぎでデータが消失する
 - [壁時計の後方ステップ（NTP補正）による順序依存テストのフレーキー失敗](./wallclock-backward-step-by-ntp.md) — NTP補正で `time.Now()` が後方ジャンプし、作成時刻DESCソートが作成順前提と食い違う。macOS `timed` ログでの追跡方法付き
+- [deadline 到達時のステータスコードは client timer と server 応答のレースで揺れる](./deadline-arrival-status-race-client-vs-server.md) — gRPC は deadline を server へ伝播するため、期限の瞬間に両端のタイマーが同時に切れる。client 側 timer が勝てば `DeadlineExceeded`、server が ctx エラーを retriable 分類して返す応答が先着すれば `Unavailable`。`D_server ≥ D_client` なので通常は client が勝つが、マージンは µs〜ms しかなく高負荷時のスケジューリング遅延で逆転する。単一コードへの固定アサートをやめ、緩めた検出力は「経過時間が deadline に達したか」で補う
 
 ### ロック・並行制御
 
