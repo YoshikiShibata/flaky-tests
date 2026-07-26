@@ -13,7 +13,7 @@ E2E テスト・並列実行環境で発生した flaky test の事例と対策�
 - [プロセス共有 singleflight がリーダーの ctx キャンセルを無関係なフォロワーへ伝搬させる](./singleflight-shared-ctx-cancellation-propagation.md) — `Do` の中で呼び出し元スコープの ctx を使うと、あるリクエスト（errgroup 兄弟エラー／クライアント切断）のキャンセルが、同じキーを待つ無関係なリクエストを `context canceled` で巻き込む。発生源は errgroup 先着エラーに握り潰され、被害はフォロワー側にだけ表面化する
 - [キャッシュ／singleflight のキーが「結果が依存する入力」を取りこぼす](./coalescing-cache-key-omits-result-dependency.md) — 共有キャッシュ／inflight のキーが種別 enum しか含まず、結果が依存する `now`（時刻）を落としていると、debug-time で `now` を大きくずらしたテストが waiter として合流したとき leader（実時刻）の結果を無検証で受け取り、自分の入力では本来ありえない結果（期待要素の nil／空）を掴む。「キーは結果が依存する入力の全体でなければならない」型。`now` を TTL 幅のバケットに切り捨ててキーへ含めることで、本番挙動を変えずに決定化。本番実害は無いが設計欠陥なのでプロダクト側で修正
 - [逐次ループの並行化におけるループキャリー依存性の見落とし](./loop-carried-dependency-in-concurrent-test-setup.md) — 並行ループ化で暗黙の実行順序依存が壊れる
-- [セットアップ・クリーンアップの順序が引き起こす孤立参照](./setup-cleanup-order-orphan-reference.md) — Child→Parent の順で setup すると、LIFO cleanup により「Child は存在するが参照先 Parent が存在しない」状態が発生する
+- [セットアップ・クリーンアップの順序が引き起こす孤立参照](./setup-cleanup-order-orphan-reference.md) — Child→Parent の順で setup すると、LIFO cleanup により「Child は存在するが参照先 Parent が存在しない」状態が発生する。逆向き（親が残って子が無い）も同じ症状を起こす: 後片付けは参照整合性に従って子から削除するため親行の削除が最後の別コミットになり、「親は走査の述語を満たすのに子が無い」中間状態を並行のグローバル走査が踏む。親を先に消せないので順序入れ替えでは直せず、削除前に親を述語から外す（同一トランザクションで）＋ 走査と後片付けを排他する、の 2 段構えになる
 - [並行取得の「先着エラー」非決定性とエラー→ステータスマッピングの取りこぼし](./errgroup-first-error-status-mapping-gap.md) — errgroup が返す先着エラーが非決定的で、マッピング層が一部センチネルを取りこぼすと観測ステータスが揺れる
 - [共有フィクスチャプールの再利用による残留状態の干渉](./shared-fixture-pool-residual-state.md) — 再利用される共有プールが過去テストの副作用を蓄積したエンティティを配り、「初期状態」前提のテストが偽陰性で flaky になる
 - [テストヘルパーの「直接DB→API/usecase経由」化が生む隠れた共有依存とロック抜け](./helper-api-routing-hidden-shared-dependency.md) — ヘルパーを本物のリクエスト処理経由に変えると、その処理が読む共有マスタへの依存とロック義務が暗黙に増え、削除窓と競合してフレークになる
