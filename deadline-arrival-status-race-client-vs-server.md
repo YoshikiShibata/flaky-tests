@@ -9,12 +9,12 @@ deadline 到達の瞬間には、**両端で同時にタイマーが切れる**�
 
 1. **client 側**: 自分の ctx deadline が切れる → gRPC ライブラリが `DeadlineExceeded` を返す
 2. **server 側**: 伝播された deadline で handler の ctx も切れる → 処理中の DB／外部呼び出しが
-   `context deadline exceeded` を返す → アプリのエラー分類器が「一時的エラー」と判定し、
-   `Unavailable` 等の**アプリ定義のコード**で応答する
+   `context deadline exceeded` を返す → アプリのエラー分類・ステータス変換処理が
+   「一時的エラー」と判定し、`Unavailable` 等の**アプリ定義のコード**で応答する
 
 client が最終的に観測するのは「自分の timer が先に発火する」か「server の応答が先に届く」かの
 **レースの勝者**であり、どちらも起こり得る。低負荷では 1 が勝ち続けるので何十回流しても再現せず、
-高負荷（並列実行・長時間ループ）で timer 発火や goroutine 起床が数 ms 遅れたときだけ 2 が勝つ。
+高負荷（並列実行・長時間ループ）で timer 発火や待機 goroutine の再スケジュールが数 ms 遅れたときだけ 2 が勝つ。
 
 重要なのは、**このレースはプロダクトのバグではない**という点。server が deadline 起因のエラーを
 retriable として分類して返すのは正しい設計（呼び出し側にリトライ／再配信を促す）であり、
@@ -29,7 +29,7 @@ client が `DeadlineExceeded` を返すのも正しい。**「観測されるコ
 2. その deadline は**メタデータ経由で server 側にも伝播**している（gRPC ではデフォルト挙動）
 3. server 側の処理が deadline 到達を**自前で観測してエラーを返す**（＝ ctx を尊重した DB クライアント・
    外部呼び出しを使っている）
-4. server のエラー分類器が ctx deadline 由来のエラーを **retriable 等に分類し独自コードで応答**する
+4. server のエラー分類・ステータス変換処理が ctx deadline 由来のエラーを **retriable 等に分類し独自コードで応答**する
 5. テストが `status.Code(err) != codes.DeadlineExceeded` のような**単一コード一致**を要求している
 
 ## なぜ「原理的には client が勝つはず」なのに負けるのか
@@ -47,7 +47,7 @@ gRPC の deadline 伝播は**絶対時刻ではなく相対時間**で行われ�
 
 負けるのは次のいずれかが起きたとき:
 
-- **client 側 timer の発火／goroutine 起床の遅れ**。高負荷（多数の並列テスト、長時間稼働、GC）では
+- **client 側 timer の発火／待機 goroutine の再スケジュールの遅れ**。高負荷（多数の並列テスト、長時間稼働、GC）では
   ランタイムのタイマー処理と待機 goroutine の再スケジュールが数 ms 単位で遅れる。この遅れが
   上記のハンデ（µs〜ms）を上回ると、server の応答が先に届く。
 - **同時 ready 時のランダム選択**。受信側は
@@ -178,7 +178,7 @@ client 側からは `desc` がマスクされて `code = Unavailable desc = Unav
 - **エラー分類（retriable / permanent / canceled）**: ctx deadline 由来のエラーを retriable に含めるのは、
   再配信・リトライで吸収させたいワーカーとしては正しい設計。テスト側がその設計を知らないと
   「なぜ `Unavailable` が返るのか」を実装バグと誤診しやすい。
-- **`select` の一様ランダム選択**: 複数 case が同時 ready のとき Go は乱択する。極小マージンのレースでは
+- **`select` の一様ランダム選択**: 複数 case が同時 ready のとき Go は一様ランダムに選ぶ。極小マージンのレースでは
   この性質自体が非決定性の増幅器になる。
 
 ## 関連ドキュメント
