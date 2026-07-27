@@ -9,8 +9,8 @@ deadline 到達の瞬間には、**両端で同時にタイマーが切れる**�
 
 1. **client 側**: 自分の ctx deadline が切れる → gRPC ライブラリが `DeadlineExceeded` を返す
 2. **server 側**: 伝播された deadline で handler の ctx も切れる → 処理中の DB／外部呼び出しが
-   `context deadline exceeded` を返す → アプリのエラー分類器が「一時的エラー」と判定し、
-   `Unavailable` 等の**アプリ定義のコード**で応答する
+   `context deadline exceeded` を返す → アプリのエラー分類・ステータス変換処理が
+   「一時的エラー」と判定し、`Unavailable` 等の**アプリ定義のコード**で応答する
 
 client が最終的に観測するのは「自分の timer が先に発火する」か「server の応答が先に届く」かの
 **レースの勝者**であり、どちらも起こり得る。低負荷では 1 が勝ち続けるので何十回流しても再現せず、
@@ -29,7 +29,7 @@ client が `DeadlineExceeded` を返すのも正しい。**「観測されるコ
 2. その deadline は**メタデータ経由で server 側にも伝播**している（gRPC ではデフォルト挙動）
 3. server 側の処理が deadline 到達を**自前で観測してエラーを返す**（＝ ctx を尊重した DB クライアント・
    外部呼び出しを使っている）
-4. server のエラー分類器が ctx deadline 由来のエラーを **retriable 等に分類し独自コードで応答**する
+4. server のエラー分類・ステータス変換処理が ctx deadline 由来のエラーを **retriable 等に分類し独自コードで応答**する
 5. テストが `status.Code(err) != codes.DeadlineExceeded` のような**単一コード一致**を要求している
 
 ## なぜ「原理的には client が勝つはず」なのに負けるのか
