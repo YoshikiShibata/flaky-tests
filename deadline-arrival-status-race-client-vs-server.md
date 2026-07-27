@@ -178,7 +178,7 @@ client 側からは `desc` がマスクされて `code = Unavailable desc = Unav
 - **エラー分類（retriable / permanent / canceled）**: ctx deadline 由来のエラーを retriable に含めるのは、
   再配信・リトライで吸収させたいワーカーとしては正しい設計。テスト側がその設計を知らないと
   「なぜ `Unavailable` が返るのか」を実装バグと誤診しやすい。
-- **`select` の一様ランダム選択**: 複数 case が同時 ready のとき Go は乱択する。極小マージンのレースでは
+- **`select` の一様ランダム選択**: 複数 case が同時 ready のとき Go は一様ランダムに選ぶ。極小マージンのレースでは
   この性質自体が非決定性の増幅器になる。
 
 ## 関連ドキュメント
