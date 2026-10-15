@@ -32,6 +32,7 @@ E2E テスト・並列実行環境で発生した flaky test の事例と対策�
 - [テストデータの有効期限が次の暦境界とちょうど一致するパターン](./data-lifetime-aligned-to-day-boundary.md) — 暦境界アンカーの StartTime と整数倍 duration の組み合わせで、テスト実行中の境界跨ぎでデータが消失する
 - [壁時計の後方ステップ（NTP補正）による順序依存テストのフレーキー失敗](./wallclock-backward-step-by-ntp.md) — NTP補正で `time.Now()` が後方ジャンプし、作成時刻DESCソートが作成順前提と食い違う。macOS `timed` ログでの追跡方法付き
 - [deadline 到達時のステータスコードは client timer と server 応答のレースで揺れる](./deadline-arrival-status-race-client-vs-server.md) — gRPC は deadline を server へ伝播するため、期限の瞬間に両端のタイマーが同時に切れる。client 側 timer が勝てば `DeadlineExceeded`、server が ctx エラーを retriable 分類して返す応答が先着すれば `Unavailable`。`D_server ≥ D_client` なので通常は client が勝つが、マージンは µs〜ms しかなく高負荷時のスケジューリング遅延で逆転する。単一コードへの固定アサートをやめ、緩めた検出力は「経過時間が deadline に達したか」で補う
+- [「遅い応答」を演じる fake が、伝播された deadline で抜けて成功を返すと結果が揺れる](./fake-replies-success-at-propagated-deadline.md) — タイムアウトを再現する fake が `ctx.Done()` で待ちを抜けたあとに成功応答を返していた。gRPC は呼び出し側の deadline を伝播するので、fake は「期限ちょうどに成功を返す相手」になり、呼び出し側では期限切れの検知と成功応答の受信が競争になる。既存の deadline レースと違い、揺れるのはステータスコードではなく**成功か失敗か**そのものなので、assert を広げては直せない。抜けたら `status.FromContextError(ctx.Err()).Err()` を返して競争を消す。フォールバックのログの有無・got の形・サブテストの所要時間の 3 点で「fake が期限の瞬間に成功を返した」まで確定できた
 
 ### ロック・並行制御
 

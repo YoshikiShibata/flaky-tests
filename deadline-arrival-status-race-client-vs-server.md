@@ -190,3 +190,5 @@ client 側からは `desc` がマスクされて `code = Unavailable desc = Unav
   — 同じ `Unavailable` でも deadline 到達前に返る別要因。経過時間チェックを残す理由。
 - [長時間ランニングテストの重要性](./importance-of-long-running-tests.md)
   — 数十回連続 PASS しても次の周で落ちる実例。
+- [「遅い応答」を演じる fake が、伝播された deadline で抜けて成功を返すと結果が揺れる](./fake-replies-success-at-propagated-deadline.md)
+  — 同じレースで、server 側（fake）が返すのがエラーではなく**成功応答**の場合。成功と失敗が入れ替わるので、assert を広げるのではなく fake 側で直す。
