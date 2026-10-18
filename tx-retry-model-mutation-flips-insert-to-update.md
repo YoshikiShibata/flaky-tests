@@ -166,6 +166,8 @@ if err := tx.RunReadWrite(ctx, func(ctx context.Context) error {
 
 ## 関連
 
+- [呼び出しを記録するテストダブルが、打ち切られたトランザクション試行の分まで数える](./recording-fake-counts-aborted-tx-attempts.md)
+  — 同じ仕組みがテストダブルの側に現れ、本番は正しいのにテストが落ちる逆の事例。
 - [トランザクション内の retryable エラー（Aborted）握りつぶしがクライアント自動リトライを無効化する](./swallowed-in-tx-retryable-error-defeats-client-retry.md)
   — 同じ「クライアント管理リトライ」前提で、逆に *リトライを発火させない* 握りつぶしの罠。
 - [エミュレータの直列化に隠されていた並列サブテストのデータ競合](./data-race-masked-by-emulator-serialization.md)
