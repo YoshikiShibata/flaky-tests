@@ -41,6 +41,7 @@ E2E テスト・並列実行環境で発生した flaky test の事例と対策�
 - [ロック競合による性能劣化](./lock_contention_performance_degradation.md) — 一部ロック保持中に他ロック待機でカスケードブロック
 - [排他制御の削除・縮小リファクタの非対称リスク](./lock-reduction-asymmetry.md) — 「不要に見える」保護削除の見落とし
 - [ユニークキー INSERT でも「最新を選ぶグローバルセレクタ」を奪うと writer になる](./unique-insert-hijacks-global-latest-selector.md) — 自分専用の行しか触らなくても、`ORDER BY version DESC LIMIT 1` 等の選択結果を差し替えるなら Exclusive が必要。Shared writer は 2 回読みの並行 reader と干渉する
+- [本番の読み取り範囲が変わると、既存テストの「ロック不要」の理由が黙って崩れる](./read-scope-change-invalidates-lock-exemption.md) — 「この処理は自分の行を読まない」というロック不要の判断は、相手の処理が今何を読むかに依存する。本番の PR が横断の読み取り元の表・絞り込み条件を変えると、テストを 1 行も変えずに、ロックを取らないテストが候補に行を差し出す参加者になる。割り込んだ行は fake の絞り込みでレスポンスから消え「1 人足りない」に見える。対策は条件に当たるケースだけ Shared を取らせ、ロックの説明と「取らない理由」を表ではなく読み取り条件で書き、読み取りを変える PR で参加者を逆引きする
 
 ### クエリ・データ意味論
 
